@@ -1,59 +1,40 @@
-name: PullRequest
+name: Android APK Build
 
 on:
   push:
     branches:
-      - master
-  pull_request:
-    branches:
-      - master
+      - main
 
 jobs:
-  buildTest:
-    name: Build & Test JDK ${{ matrix.java_version }}
-    runs-on: macOS-latest
-    strategy:
-      matrix:
-        java_version: [ 11.0.3 ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install JDK ${{ matrix.java_version }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'adopt'
-          java-version: ${{ matrix.java_version }}
-      - name: Install Android SDK
-        uses: malinskiy/action-android/install-sdk@release/0.1.1
-      - name: Build project
-        run: ./gradlew build
-      - name: Run tests
-        run: ./gradlew test
-  Check:
-    name: Check
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java_version: [ 11.0.3 ]
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install JDK ${{ matrix.java_version }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'adopt'
-          java-version: ${{ matrix.java_version }}
-      - name: Install Android SDK
-        uses: malinskiy/action-android/install-sdk@release/0.1.1
-      - name: Code checks
-        run: ./gradlew check
-      - name: Archive Lint report
-        uses: actions/upload-artifact@v4
-        if: ${{ always() }}
-        with:
-          name: IP-Cam-Lint-report
-          path: app/build/reports/lint-results.html
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'             # Set the Java version to the latest available in the 11.x series
+        distribution: 'adopt'          # Use AdoptOpenJDK
+
+    - name: Install Android SDK
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget unzip
+        wget https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip
+        mkdir -p $HOME/android-sdk/cmdline-tools
+        unzip commandlinetools-linux-8092744_latest.zip -d $HOME/android-sdk/cmdline-tools
+        rm commandlinetools-linux-8092744_latest.zip
+        yes | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+
+    - name: Build APK
+      run: |
+        ./gradlew assembleDebug         # Run the Gradle build command directly from the top-level directory
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-debug.apk            # Name of the artifact
+        path: app/build/outputs/apk/debug/app-debug.apk  # Path to the generated APK
