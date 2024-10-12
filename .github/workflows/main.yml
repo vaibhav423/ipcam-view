@@ -21,11 +21,11 @@ jobs:
 
     - name: Build the app
       run: |
-        cd Andorid  # Change to the correct directory if needed
+        # Change to the correct directory if needed
         ./gradlew assembleDebug --stacktrace  # Get detailed output for troubleshooting
 
     - name: Upload APK
       uses: actions/upload-artifact@v3  # Updated to the latest version
       with:
         name: app-debug.apk
-        path: Andorid/app/build/outputs/apk/debug/app-debug.apk  # Adjust the path if necessary
+        path: app/build/outputs/apk/debug/app-debug.apk  # Adjust the path if necessary
